@@ -2271,4 +2271,4 @@ def PTU_ScanRead(filename, cnum = 1, plt_flag=False):
 
 #%%    
 if __name__ == '__main__':
-    PTU_ScanRead(r'D:\Collabs\fromMarcel\ATS6.ptu', cnum=1, plt_flag=False)    
+    PTU_ScanRead(r"E:\Data_Leuven\SP8\20240503_MCF10a_Tension_Sensors_Cell_Lines_ATS_CTS\export_Ahrensberg\ATS6.ptu", cnum=1, plt_flag=False)    

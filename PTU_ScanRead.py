@@ -12,10 +12,10 @@ import sys
 import time
 import pickle
 from tqdm import tqdm
-# from fast_histogram import histogramdd  
+from fast_histogram import histogramdd  
 # from mpi4py import MPI 
 from multiprocessing import Pool, cpu_count
-# from numba import njit 
+from numba import njit 
 
 #%%
 
@@ -719,19 +719,19 @@ def mHist2(x, y, xv=None, yv=None):
 
     return h, xv, yv
 
-# @njit
+@njit
 def mHist3(x, y, z, xv=None, yv=None, zv=None):
     # x = np.asarray(x).flatten()
     # y = np.asarray(y).flatten()
     # z = np.asarray(z).flatten()
-    x = np.asarray(x).ravel()
-    y = np.asarray(y).ravel()
-    z = np.asarray(z).ravel()
+    x1 = np.asarray(x).ravel()
+    y1 = np.asarray(y).ravel()
+    z1 = np.asarray(z).ravel()
     
-    ind = ~np.isfinite(x) | ~np.isfinite(y) | ~np.isfinite(z)
-    x = x[~ind]
-    y = y[~ind]
-    z = z[~ind]
+    ind = ~np.isfinite(x1) | ~np.isfinite(y1) | ~np.isfinite(z1)
+    x2 = x1[~ind]
+    y2 = y1[~ind]
+    z2 = z1[~ind]
 
     if xv is not None and yv is None and zv is None:
         if len(xv)==1:
@@ -746,18 +746,18 @@ def mHist3(x, y, z, xv=None, yv=None, zv=None):
          NX, NY, NZ = 100, 100, 100
             
     if xv is not None and yv is not None and zv is None:
-        xmin, xmax = np.min(x), np.max(x)
-        ymin, ymax = np.min(y), np.max(y)
-        zmin, zmax = np.min(z), np.max(z)
+        xmin, xmax = np.min(x2), np.max(x2)
+        ymin, ymax = np.min(y2), np.max(y2)
+        zmin, zmax = np.min(z2), np.max(z2)
         dx, dy, dz = (xmax - xmin) / NX, (ymax - ymin) / NY, (zmax - zmin) / NZ
 
-        xv = np.linspace(xmin, xmax, NX)
-        yv = np.linspace(ymin, ymax, NY)
-        zv = np.linspace(zmin, zmax, NZ)
+        xv2 = np.linspace(xmin, xmax, NX)
+        yv2 = np.linspace(ymin, ymax, NY)
+        zv2 = np.linspace(zmin, zmax, NZ)
 
-        x = np.floor((x - xmin) / dx).astype(int)
-        y = np.floor((y - ymin) / dy).astype(int)
-        z = np.floor((z - zmin) / dz).astype(int)
+        x4 = np.floor((x2 - xmin) / dx).astype(int)
+        y4 = np.floor((y2 - ymin) / dy).astype(int)
+        z4 = np.floor((z2 - zmin) / dz).astype(int)
 
         xmax = np.round((xmax-xmin)/dx).astype(int)
         ymax = np.round((ymax-ymin)/dx).astype(int)
@@ -768,46 +768,49 @@ def mHist3(x, y, z, xv=None, yv=None, zv=None):
         zmin, zmax = zv[0], zv[-1]
 
         # clipping
-        x = np.clip(x, xmin, xmax, out = x, casting='unsafe')
-        y = np.clip(y, ymin, ymax, out = y, casting='unsafe')
-        z = np.clip(z, zmin, zmax, out = z, casting='unsafe')
+        x3 = np.clip(x2, xmin, xmax, out = x2, casting='unsafe')
+        y3 = np.clip(y2, ymin, ymax, out = y2, casting='unsafe')
+        z3 = np.clip(z2, zmin, zmax, out = z2, casting='unsafe')
 
         # Handling for x
         if (np.sum(np.diff(np.diff(xv))) == 0):
             dx = xv[1] - xv[0]
             # x = np.round((x - xmin) / dx).astype(int)
-            x = np.int64(np.floor((x-xmin)/dx + 0.5))
-            xmax =  np.int64(np.floor((xmax-xmin)/dx + 0.5))+1
+            x4 = np.int64(np.floor((x3-xmin)/dx + 0.5))
+            xmax2 =  np.int64(np.floor((xmax-xmin)/dx + 0.5))+1
         else:
-            x = np.round(np.interp(x, xv, np.arange(len(xv)))).astype(int)
-            xmax = np.round(np.interp(xmax, xv, np.arange(len(xv)))).astype(int)
+            x4 = np.round(np.interp(x3, xv, np.arange(len(xv)))).astype(int)
+            xmax2 = np.round(np.interp(xmax, xv, np.arange(len(xv)))).astype(int)
             
         # Handling for y
         if np.sum(np.diff(np.diff(yv))) == 0:
             dy = yv[1] - yv[0]
             # y = np.round((y - ymin) / dy).astype(int)
-            y = np.int64(np.floor((y-ymin)/dy + 0.5))
-            ymax =  np.int64(np.floor((ymax-ymin)/dy + 0.5))+1
+            y4 = np.int64(np.floor((y-ymin)/dy + 0.5))
+            ymax2 =  np.int64(np.floor((ymax-ymin)/dy + 0.5))+1
         else:
-            y = np.round(np.interp(y, yv, np.arange(len(yv)))).astype(int)
-            ymax = np.round(np.interp(ymax, yv, np.arange(len(yv)))).astype(int)
+            y4 = np.round(np.interp(y, yv, np.arange(len(yv)))).astype(int)
+            ymax2 = np.round(np.interp(ymax, yv, np.arange(len(yv)))).astype(int)
             
         # Handling for z
         if np.sum(np.diff(np.diff(zv))) == 0:
             dz = zv[1] - zv[0]
             # z = np.round((z - zmin) / dz).astype(int)
-            z = np.int64(np.floor((z-zmin)/dz + 0.5))
+            z4 = np.int64(np.floor((z-zmin)/dz + 0.5))
             zmax =  np.int64(np.floor((zmax-zmin)/dz + 0.5))+1
         else:
-            z = np.round(np.interp(z, zv, np.arange(len(zv)))).astype(int)
+            z4 = np.round(np.interp(z, zv, np.arange(len(zv)))).astype(int)
             zmax = np.round(np.interp(zmax, zv, np.arange(len(zv)))).astype(int)
-
+        
+        xv2 = xv 
+        yv2 = yv
+        zv2 = zv
 
     # Initialize the histogram array
-    h = np.zeros(len(xv)* len(yv)* len(zv), dtype=int)
+    h = np.zeros(len(xv2)* len(yv2)* len(zv2), dtype=int)
     # h = np.zeros((len(xv), len(yv), len(zv)), dtype=int)
     
-    num = np.sort(x + xmax * y + xmax * ymax * z)
+    num = np.sort(x4 + xmax * y4 + xmax * ymax * z4)
     np.add.at(h, num, 1)
     # np.add.at(h.ravel(), num, 1)
     # h[num]=1
@@ -822,10 +825,10 @@ def mHist3(x, y, z, xv=None, yv=None, zv=None):
 
     # Increment the histogram at the calculated indices
     
-    h = h.reshape((len(xv), len(yv), len(zv)), order='F')
+    h2 = h.reshape((len(xv2), len(yv2), len(zv2)), order='F')
     # h.ravel()[num[tmp == 1]] += -ind[tmp == 1] + ind[tmp == -1]
 
-    return h, xv, yv, zv
+    return h2, xv2, yv2, zv2
 
 
 # @njit
@@ -1393,7 +1396,7 @@ def PTU_ScanRead(filename, cnum = 1, plt_flag=False):
                 tmp_sync, tmp_tcspc, tmp_chan, tmp_special, num, loc = ptu_reader.get_photon_chunk(cnt+1, photons, head)   
                 
             # F = [val for val in y if val & Frame > 0]
-            F = y[(marker.astype(int) & Frame) >0] # Frame changes
+            F = y[(marker.astype(int) & Frame) > 0] # Frame changes
     
             # t_sync = []
             # t_tcspc = []
@@ -1615,7 +1618,7 @@ def PTU_ScanRead(filename, cnum = 1, plt_flag=False):
                 tmp_sync, tmp_tcspc, tmp_chan, tmp_special, num, loc = ptu_reader.get_photon_chunk(cnt+1, photons, head)   
                 
             # F = [val for val in y if val & Frame > 0]
-            F = y[(marker.astype(int) & Frame) >0] # Frame changes
+            F = y[(marker.astype(int) & Frame) > 0] # Frame changes
 
     
             if not in_frame:
